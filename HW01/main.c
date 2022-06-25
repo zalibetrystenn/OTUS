@@ -7,6 +7,7 @@
 
 #define EOCD_SIGNATURE 0x06054b50
 #define LFL_SIGNATURE 0x04034b50
+#define CDFH_SIGNATURE 0x02014b50
 
 #pragma pack(1)
 typedef struct SEOCD
@@ -56,26 +57,120 @@ typedef struct SLocalFileHeader
   // Длина поля с дополнительными данными
   uint16_t extraFieldLength;
   // Название файла (размером filenameLength)
-  uint8_t filename[];
+  // uint8_t *filename;
   // // Дополнительные данные (размером extraFieldLength)
   // uint8_t *extraField;
 } TLocalFileHeader;
 #pragma pack()
 
+#pragma pack(1)
+typedef struct SCentralDirectoryFileHeader
+{
+  // Обязательная сигнатура, равна 0x02014b50
+  uint32_t signature;
+  // Версия для создания
+  uint16_t versionMadeBy;
+  // Минимальная версия для распаковки
+  uint16_t versionToExtract;
+  // Битовый флаг
+  uint16_t generalPurposeBitFlag;
+  // Метод сжатия (0 - без сжатия, 8 - deflate)
+  uint16_t compressionMethod;
+  // Время модификации файла
+  uint16_t modificationTime;
+  // Дата модификации файла
+  uint16_t modificationDate;
+  // Контрольная сумма
+  uint32_t crc32;
+  // Сжатый размер
+  uint32_t compressedSize;
+  // Несжатый размер
+  uint32_t uncompressedSize;
+  // Длина название файла
+  uint16_t filenameLength;
+  // Длина поля с дополнительными данными
+  uint16_t extraFieldLength;
+  // Длина комментариев к файлу
+  uint16_t fileCommentLength;
+  // Номер диска
+  uint16_t diskNumber;
+  // Внутренние аттрибуты файла
+  uint16_t internalFileAttributes;
+  // Внешние аттрибуты файла
+  uint32_t externalFileAttributes;
+  // Смещение до структуры LocalFileHeader
+  uint32_t localFileHeaderOffset;
+  // Имя файла (длиной filenameLength)
+  // uint8_t *filename;
+  // // Дополнительные данные (длиной extraFieldLength)
+  // uint8_t *extraField;
+  // // Комментарий к файла (длиной fileCommentLength)
+  // uint8_t *fileComment;
+} TCentralDirectoryFileHeader;
+#pragma pack()
+
+void readCentralDirectoryFileHeader(FILE *f, int countFilesInZip)
+{
+  TCentralDirectoryFileHeader CentralDirectoryFileHeaderBuffer = {0};
+  int kursorPositionOffset = 0;
+  bool isContunue = true;
+  int countFileHeaderBuffer = 1;
+
+  while (isContunue)
+  {
+    fseek(f, kursorPositionOffset, SEEK_SET);
+
+    if (feof(f))
+    {
+      isContunue = false;
+      continue;
+    }
+
+    fread(&CentralDirectoryFileHeaderBuffer, sizeof(CentralDirectoryFileHeaderBuffer), 1, f);
+
+    if (CentralDirectoryFileHeaderBuffer.signature == CDFH_SIGNATURE)
+    {
+      printf("LocalFileHeader signature is %x count: %d, kursorPositionOffset: %d\n", CentralDirectoryFileHeaderBuffer.signature, countFileHeaderBuffer, kursorPositionOffset);
+      printf("filenameLength: %d, files count: %d\n", CentralDirectoryFileHeaderBuffer.filenameLength, countFileHeaderBuffer);
+
+      // char *str = malloc(sizeof(char) * CentralDirectoryFileHeaderBuffer.filenameLength + 1);
+      char str[500];
+      fread(&str, sizeof(CentralDirectoryFileHeaderBuffer.filenameLength), 1, f);
+      str[CentralDirectoryFileHeaderBuffer.filenameLength + 1] = '\0';
+      // printf("size of str = %ld\n", strlen(str));
+      printf("file number %d is %s\n\n", countFileHeaderBuffer, str);
+
+      // if (str != NULL)
+      //   free(str);
+
+      countFileHeaderBuffer++;
+      if (countFileHeaderBuffer == countFilesInZip)
+        isContunue = false;
+      else
+        kursorPositionOffset++;
+      continue;
+    }
+    else
+    {
+      kursorPositionOffset++;
+    }
+  }
+}
+
 void showFileName(FILE *f, int countFilesInZip)
 {
   TLocalFileHeader LocalFileHeaderBuffer = {0};
-  int kursorPositionOffset = -22;
-  bool isExit = true;
+  int kursorPositionOffset = 0;
+  bool isContunue = true;
   int countFileHeaderBuffer = 1;
 
-  while (isExit)
+  while (isContunue)
   {
-    fseek(f, kursorPositionOffset, SEEK_END);
+    fseek(f, kursorPositionOffset, SEEK_SET);
 
-    if (ftell(f) == 0)
+    if (feof(f))
     {
-      isExit = false;
+      isContunue = false;
       continue;
     }
 
@@ -83,28 +178,25 @@ void showFileName(FILE *f, int countFilesInZip)
 
     if (LocalFileHeaderBuffer.signature == LFL_SIGNATURE)
     {
-      printf("signature is %x count: %d, kursorPositionOffset: %d\n", LocalFileHeaderBuffer.signature, countFileHeaderBuffer, kursorPositionOffset);
-      printf("modificationTime: %d count: %d\n", LocalFileHeaderBuffer.modificationTime, countFileHeaderBuffer);
-      printf("filenameLength: %d count: %d\n\n", LocalFileHeaderBuffer.filenameLength, countFileHeaderBuffer);
+      printf("LocalFileHeader signature is %x count: %d, kursorPositionOffset: %d\n", LocalFileHeaderBuffer.signature, countFileHeaderBuffer, kursorPositionOffset);
+      printf("filenameLength: %d, files count: %d\n", LocalFileHeaderBuffer.filenameLength, countFileHeaderBuffer);
 
-      char *str = malloc(sizeof(char) * LocalFileHeaderBuffer.filenameLength + 1);
-      if (str != NULL)
-      {
-        memcpy(str, LocalFileHeaderBuffer.filename, LocalFileHeaderBuffer.filenameLength);
-        str[LocalFileHeaderBuffer.filenameLength + 1] = '\0';
-        printf("file number %d is %s, длинна строки str равна = %ld\n", countFileHeaderBuffer, str, strlen(str));
-      }
+      char str[100];
+
+      fread(&str, sizeof(LocalFileHeaderBuffer.filenameLength), 1, f);
+      str[LocalFileHeaderBuffer.filenameLength + 1] = '\0';
+      printf("file number %d is %s, length of str is %ld\n\n", countFileHeaderBuffer, str, strlen(str));
 
       countFileHeaderBuffer++;
       if (countFileHeaderBuffer == countFilesInZip)
-        isExit = false;
+        isContunue = false;
       else
-        kursorPositionOffset--;
+        kursorPositionOffset++;
       continue;
     }
     else
     {
-      kursorPositionOffset--;
+      kursorPositionOffset++;
     }
   }
 }
@@ -113,27 +205,27 @@ bool findEOCD(FILE *f, int *countFilesInZip)
 {
   TEOCD EOCDBuffer = {0};
   int kursorPositionOffset = -22;
-  bool isExit = true;
+  bool isContunue = true;
   bool isFindEOCD = false;
 
-  while (isExit)
+  while (isContunue)
   {
     fseek(f, kursorPositionOffset, SEEK_END);
 
     if (ftell(f) == 0)
     {
-      isExit = false;
+      isContunue = false;
       continue;
     }
     fread(&EOCDBuffer, sizeof(EOCDBuffer), 1, f);
 
     if (EOCDBuffer.signature == EOCD_SIGNATURE)
     {
-      printf("signature is %x\n", EOCDBuffer.signature);
+      printf("EOCD signature is %x\n\n", EOCDBuffer.signature);
 
       *countFilesInZip = EOCDBuffer.numberCentralDirectoryRecord;
       isFindEOCD = true;
-      isExit = false;
+      isContunue = false;
       continue;
     }
     else
@@ -146,14 +238,19 @@ bool findEOCD(FILE *f, int *countFilesInZip)
   return isFindEOCD;
 }
 
-int main()
+int main(int argc, char *argv[])
 {
+  if (argc == 0 || argc > 2)
+  {
+    return 1;
+  }
+
   FILE *f;
 
   bool isFindEOCD = false;
   int countFilesInZip = 0;
 
-  f = fopen("zipjpeg.jpg", "rb");
+  f = fopen(argv[1], "rb");
   if (f == NULL)
   {
     perror("Ошибка! Не удалось открыть файл на чтение");
@@ -167,7 +264,11 @@ int main()
 
       printf("numberCentralDirectoryRecord is %d\n", countFilesInZip);
 
-      showFileName(f, countFilesInZip);
+      readCentralDirectoryFileHeader(f, countFilesInZip);
+    }
+    else
+    {
+      printf("Внутри файла нет архива\n");
     }
   }
   fclose(f);
