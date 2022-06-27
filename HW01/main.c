@@ -135,7 +135,7 @@ void readCentralDirectoryFileHeader(FILE *f, int countFilesInZip)
 
       // char *str = malloc(sizeof(char) * CentralDirectoryFileHeaderBuffer.filenameLength + 1);
       char str[500];
-      fread(&str, sizeof(CentralDirectoryFileHeaderBuffer.filenameLength), 1, f);
+      fread(&str, CentralDirectoryFileHeaderBuffer.filenameLength, 1, f);
       str[CentralDirectoryFileHeaderBuffer.filenameLength] = '\0';
       // printf("size of str = %ld\n", strlen(str));
       printf("file number %d is %s\n\n", countFileHeaderBuffer, str);
