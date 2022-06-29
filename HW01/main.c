@@ -9,6 +9,8 @@
 #define LFL_SIGNATURE 0x04034b50
 #define CDFH_SIGNATURE 0x02014b50
 
+#define IS_EXIST_DATA_DESCRIPTOR 0x4
+
 #pragma pack(1)
 typedef struct SEOCD
 {
@@ -133,15 +135,13 @@ void readCentralDirectoryFileHeader(FILE *f, int countFilesInZip)
       printf("LocalFileHeader signature is %x count: %d, kursorPositionOffset: %d\n", CentralDirectoryFileHeaderBuffer.signature, countFileHeaderBuffer, kursorPositionOffset);
       printf("filenameLength: %d, files count: %d\n", CentralDirectoryFileHeaderBuffer.filenameLength, countFileHeaderBuffer);
 
-      // char *str = malloc(sizeof(char) * CentralDirectoryFileHeaderBuffer.filenameLength + 1);
-      char str[500];
-      fread(&str, CentralDirectoryFileHeaderBuffer.filenameLength, 1, f);
+      char *str = malloc(sizeof(char) * CentralDirectoryFileHeaderBuffer.filenameLength + 1);
+      fread(str, CentralDirectoryFileHeaderBuffer.filenameLength, 1, f);
       str[CentralDirectoryFileHeaderBuffer.filenameLength] = '\0';
-      // printf("size of str = %ld\n", strlen(str));
       printf("file number %d is %s\n\n", countFileHeaderBuffer, str);
 
-      // if (str != NULL)
-      //   free(str);
+      if (str != NULL)
+        free(str);
 
       countFileHeaderBuffer++;
       if (countFileHeaderBuffer == countFilesInZip)
@@ -153,6 +153,61 @@ void readCentralDirectoryFileHeader(FILE *f, int countFilesInZip)
     else
     {
       kursorPositionOffset++;
+    }
+  }
+}
+
+void readCentralDirectoryFileHeaderOptimized(FILE *f, int countFilesInZip)
+{
+  TLocalFileHeader LocalFileHeaderBuffer = {0};
+  bool isContunue = true;
+  int countFileHeaderBuffer = 1;
+  fseek(f, 0, SEEK_SET);
+
+  while (isContunue)
+  {
+
+    if (feof(f))
+    {
+      isContunue = false;
+      continue;
+    }
+
+    fread(&LocalFileHeaderBuffer, sizeof(LocalFileHeaderBuffer), 1, f);
+
+    if (LocalFileHeaderBuffer.signature == LFL_SIGNATURE)
+    {
+      printf("LocalFileHeader signature is %x count: %d\n", LocalFileHeaderBuffer.signature, countFileHeaderBuffer);
+      printf("filenameLength: %d, files count: %d\n", LocalFileHeaderBuffer.filenameLength, countFileHeaderBuffer);
+      printf("Flags %x\n", LocalFileHeaderBuffer.generalPurposeBitFlag);
+
+      char *str = malloc(sizeof(char) * LocalFileHeaderBuffer.filenameLength + 1);
+      fread(str, LocalFileHeaderBuffer.filenameLength, 1, f);
+      str[LocalFileHeaderBuffer.filenameLength] = '\0';
+      printf("file number %d is %s\n\n", countFileHeaderBuffer, str);
+      countFileHeaderBuffer++;
+
+      if (str != NULL)
+        free(str);
+
+      if (countFileHeaderBuffer == countFilesInZip)
+      {
+        isContunue = false;
+        continue;
+      }
+
+      if (LocalFileHeaderBuffer.compressionMethod == 0)
+        fseek(f, LocalFileHeaderBuffer.extraFieldLength + LocalFileHeaderBuffer.uncompressedSize, SEEK_CUR);
+      else
+        fseek(f, LocalFileHeaderBuffer.extraFieldLength + LocalFileHeaderBuffer.compressedSize, SEEK_CUR);
+
+      if (LocalFileHeaderBuffer.generalPurposeBitFlag & IS_EXIST_DATA_DESCRIPTOR)
+        fseek(f, sizeof(uint32_t) * 4, SEEK_CUR);
+    }
+    else
+    {
+
+      printf("ELSE\n\n");
     }
   }
 }
@@ -264,7 +319,7 @@ int main(int argc, char *argv[])
 
       printf("numberCentralDirectoryRecord is %d\n", countFilesInZip);
 
-      readCentralDirectoryFileHeader(f, countFilesInZip);
+      readCentralDirectoryFileHeaderOptimized(f, countFilesInZip);
     }
     else
     {
