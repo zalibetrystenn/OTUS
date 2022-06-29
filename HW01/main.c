@@ -319,7 +319,7 @@ int main(int argc, char *argv[])
 
       printf("numberCentralDirectoryRecord is %d\n", countFilesInZip);
 
-      readCentralDirectoryFileHeaderOptimized(f, countFilesInZip);
+      readLocalFileHeaderOptimized(f, countFilesInZip);
     }
     else
     {
