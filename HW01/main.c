@@ -111,7 +111,7 @@ typedef struct SCentralDirectoryFileHeader
 } TCentralDirectoryFileHeader;
 #pragma pack()
 
-void readCentralDirectoryFileHeader(FILE *f, int countFilesInZip)
+void readLocalFileHeader(FILE *f, int countFilesInZip)
 {
   TCentralDirectoryFileHeader CentralDirectoryFileHeaderBuffer = {0};
   int kursorPositionOffset = 0;
@@ -157,7 +157,7 @@ void readCentralDirectoryFileHeader(FILE *f, int countFilesInZip)
   }
 }
 
-void readCentralDirectoryFileHeaderOptimized(FILE *f, int countFilesInZip)
+void readLocalFileHeaderOptimized(FILE *f, int countFilesInZip)
 {
   TLocalFileHeader LocalFileHeaderBuffer = {0};
   bool isContunue = true;
