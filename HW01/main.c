@@ -4,6 +4,8 @@
 #include <inttypes.h>
 #include <stdbool.h>
 #include <string.h>
+#include "circularBuffer.h"
+#include <errno.h>
 
 #define EOCD_SIGNATURE 0x06054b50
 #define LFL_SIGNATURE 0x04034b50
@@ -157,12 +159,49 @@ void readLocalFileHeader(FILE *f, int countFilesInZip)
   }
 }
 
+size_t getSignaturePosition(FILE *f, sCircularBuffer *buff)
+{
+  size_t count = 0;
+
+  uint8_t ch = 0;
+  printf("getSignaturePosition()\n");
+  circular_buffer_init(buff);
+  while (1)
+  {
+    if (feof(f))
+    {
+      exit(1);
+    }
+
+    printf("getSignaturePosition()\n");
+    fread(&ch, sizeof(ch), 1, f);
+    count++;
+    printf("count from getSignaturePosition: %ld, ch = %x\n", count, ch);
+
+    if (circular_buffer_put(buff, ch))
+    {
+      return count;
+    }
+  }
+
+  return count;
+}
+
 void readLocalFileHeaderOptimized(FILE *f, int countFilesInZip)
 {
   TLocalFileHeader LocalFileHeaderBuffer = {0};
   bool isContunue = true;
   int countFileHeaderBuffer = 1;
-  fseek(f, 0, SEEK_SET);
+  sCircularBuffer buff;
+  size_t countOfReadedBytes = 0;
+
+  countOfReadedBytes = getSignaturePosition(f, &buff);
+  printf("countOfReadedBytes: %ld\n", countOfReadedBytes);
+
+  if (countOfReadedBytes < 2)
+    exit(1);
+
+  fseek(f, countOfReadedBytes - 4, SEEK_SET);
 
   while (isContunue)
   {
@@ -206,8 +245,8 @@ void readLocalFileHeaderOptimized(FILE *f, int countFilesInZip)
     }
     else
     {
-
-      printf("ELSE\n\n");
+      // fseek(f, sizeof(LocalFileHeaderBuffer) - 1, SEEK_CUR);
+      //  printf("ELSE\n\n");
     }
   }
 }
