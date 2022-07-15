@@ -177,7 +177,8 @@ size_t getSignaturePosition(FILE *f, sCircularBuffer *buff)
 
     if (circular_buffer_put(buff, ch))
     {
-      return count;
+      // минус 4 байта самой сигнатуры, чтобы вернуть позицию первого байта сигнатуры
+      return count - 4;
     }
   }
 
@@ -198,7 +199,7 @@ void readLocalFileHeaderOptimized(FILE *f, int countFilesInZip)
   if (countOfReadedBytes < 2)
     exit(1);
 
-  fseek(f, countOfReadedBytes - 4, SEEK_SET);
+  fseek(f, countOfReadedBytes, SEEK_SET);
 
   while (isContunue)
   {

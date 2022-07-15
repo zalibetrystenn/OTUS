@@ -2,7 +2,7 @@ EOCD signature is 6054b50
 
 Этот файл содержит внутри архив
 numberCentralDirectoryRecord is 185
-countOfReadedBytes: 30475
+countOfReadedBytes: 30471
 LocalFileHeader signature is 4034b50 count: 1
 filenameLength: 8, files count: 1
 file number 1 is jpeg-9d/
