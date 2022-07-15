@@ -162,9 +162,8 @@ void readLocalFileHeader(FILE *f, int countFilesInZip)
 size_t getSignaturePosition(FILE *f, sCircularBuffer *buff)
 {
   size_t count = 0;
-
   uint8_t ch = 0;
-  printf("getSignaturePosition()\n");
+
   circular_buffer_init(buff);
   while (1)
   {
@@ -173,10 +172,8 @@ size_t getSignaturePosition(FILE *f, sCircularBuffer *buff)
       exit(1);
     }
 
-    printf("getSignaturePosition()\n");
     fread(&ch, sizeof(ch), 1, f);
     count++;
-    printf("count from getSignaturePosition: %ld, ch = %x\n", count, ch);
 
     if (circular_buffer_put(buff, ch))
     {
@@ -218,7 +215,6 @@ void readLocalFileHeaderOptimized(FILE *f, int countFilesInZip)
     {
       printf("LocalFileHeader signature is %x count: %d\n", LocalFileHeaderBuffer.signature, countFileHeaderBuffer);
       printf("filenameLength: %d, files count: %d\n", LocalFileHeaderBuffer.filenameLength, countFileHeaderBuffer);
-      printf("Flags %x\n", LocalFileHeaderBuffer.generalPurposeBitFlag);
 
       char *str = malloc(sizeof(char) * LocalFileHeaderBuffer.filenameLength + 1);
       fread(str, LocalFileHeaderBuffer.filenameLength, 1, f);
@@ -242,11 +238,6 @@ void readLocalFileHeaderOptimized(FILE *f, int countFilesInZip)
 
       if (LocalFileHeaderBuffer.generalPurposeBitFlag & IS_EXIST_DATA_DESCRIPTOR)
         fseek(f, sizeof(uint32_t) * 4, SEEK_CUR);
-    }
-    else
-    {
-      // fseek(f, sizeof(LocalFileHeaderBuffer) - 1, SEEK_CUR);
-      //  printf("ELSE\n\n");
     }
   }
 }
