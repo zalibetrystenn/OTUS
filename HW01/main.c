@@ -190,10 +190,10 @@ void readLocalFileHeaderOptimized(FILE *f, int countFilesInZip)
   TLocalFileHeader LocalFileHeaderBuffer = {0};
   bool isContunue = true;
   int countFileHeaderBuffer = 1;
-  sCircularBuffer buff;
+  sCircularBuffer *buff = sCircularBuffer_alloc();
   size_t countOfReadedBytes = 0;
 
-  countOfReadedBytes = getSignaturePosition(f, &buff);
+  countOfReadedBytes = getSignaturePosition(f, buff);
   printf("countOfReadedBytes: %ld\n", countOfReadedBytes);
 
   if (countOfReadedBytes < 2)

@@ -1,5 +1,22 @@
 #include <stdio.h>
+#include <stdlib.h>
 #include "circularBuffer.h"
+
+#define BUFFER_SIZE 4
+struct sCircularBuffer
+{
+    int isEmpty;
+    int isFull;
+    int head;
+    int tail;
+    char data[BUFFER_SIZE];
+};
+
+sCircularBuffer *sCircularBuffer_alloc()
+{
+    sCircularBuffer *result = (sCircularBuffer *)malloc(sizeof(sCircularBuffer));
+    return result;
+}
 
 void circular_buffer_init(sCircularBuffer *apArray)
 {

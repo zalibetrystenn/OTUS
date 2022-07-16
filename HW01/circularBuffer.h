@@ -1,16 +1,9 @@
 #ifndef CIRCULAR_BUFFER
 #define CIRCULAR_BUFFER
 
-#define BUFFER_SIZE 4
-typedef struct
-{
-    int isEmpty;
-    int isFull;
-    int head;
-    int tail;
-    char data[BUFFER_SIZE];
-} sCircularBuffer;
+typedef struct sCircularBuffer sCircularBuffer;
 
+sCircularBuffer *sCircularBuffer_alloc();
 void circular_buffer_init(sCircularBuffer *apArray);
 int circular_buffer_put(sCircularBuffer *apArray, char aValue);
 void circular_buffer_clear(sCircularBuffer *apArray);
